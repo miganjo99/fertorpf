@@ -21,32 +21,40 @@ export default function Login() {
     if (data.success) {
       alert(`Bienvenido, ${data.nombre}`);
       
-      // Lógica de redirección según el rol
       if (data.rol === 'admin') {
-        router.push('/admin/dashboard'); // (Aún no creada)
+        router.push('/admin/dashboard'); 
       } else {
-        router.push('/cliente/entrenamientos'); // (Aún no creada)
+        router.push('/cliente/entrenamientos'); 
       }
     } else {
       alert('Error: ' + data.error);
     }
   };
 
+  const inputClass = "w-full p-3 mb-4 border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500";
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">Iniciar Sesión</h2>
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+      
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-lg w-96">
+        
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">Iniciar Sesión</h2>
+        
         <input 
-          type="email" placeholder="Email" className="w-full p-2 border mb-4 rounded"
+          type="email" placeholder="Email" className={inputClass}
           onChange={(e) => setFormData({...formData, email: e.target.value})}
         />
         <input 
-          type="password" placeholder="Contraseña" className="w-full p-2 border mb-4 rounded"
+          type="password" placeholder="Contraseña" className={inputClass}
           onChange={(e) => setFormData({...formData, password: e.target.value})}
         />
-        <button type="submit" className="w-full bg-green-600 text-white p-2 rounded font-bold">Entrar</button>
-        <p className="mt-4 text-sm text-center">
-          ¿No tienes cuenta? <Link href="/registro" className="text-blue-500">Regístrate aquí</Link>
+        
+        <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded font-bold transition-colors">
+            Entrar
+        </button>
+        
+        <p className="mt-4 text-sm text-center text-gray-600">
+          ¿No tienes cuenta? <Link href="/registro" className="text-blue-500 font-bold hover:underline">Regístrate aquí</Link>
         </p>
       </form>
     </div>
