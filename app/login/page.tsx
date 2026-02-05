@@ -17,9 +17,12 @@ export default function Login() {
     });
 
     const data = await res.json();
-
+//     console.log(data);
+// alert(JSON.stringify(data));
     if (data.success) {
-      alert(`Bienvenido, ${data.nombre}`);
+      // alert(`Bienvenido, ${data.nombre}`);
+
+      localStorage.setItem('usuario_activo', JSON.stringify(data));
       
       if (data.rol === 'admin') {
         router.push('/admin/dashboard'); 
