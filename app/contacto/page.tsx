@@ -133,8 +133,10 @@ export default function Contacto() {
           <button 
             type="submit" 
             disabled={enviando}
-            className={`w-full text-white font-bold p-4 mt-2 rounded transition-colors ${
-              enviando ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+            className={`w-full text-white font-bold font-heading tracking-wide p-4 mt-4 rounded-xl shadow-lg shadow-red-500/20 transition-all transform ${
+              enviando 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-[#FF4C4C] hover:bg-[#E03E3E] hover:scale-[1.02]'
             }`}
           >
             {enviando ? 'Enviando...' : 'Enviar Solicitud'}

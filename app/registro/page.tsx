@@ -38,7 +38,10 @@ export default function Registro() {
           onChange={(e) => setFormData({...formData, password: e.target.value})}
         />
         
-        <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded font-bold transition-colors">
+        <button 
+            type="submit" 
+            className="w-full bg-[#FF4C4C] hover:bg-[#E03E3E] text-white font-bold font-heading uppercase tracking-widest p-4 mt-6 rounded-xl shadow-lg shadow-red-500/30 transition-all transform hover:scale-[1.02]"
+          >
             Registrarse
         </button>
       </form>
