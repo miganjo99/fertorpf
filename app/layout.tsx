@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Montserrat } from 'next/font/google'; 
 import './globals.css';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton'; 
 
 const inter = Inter({ 
@@ -28,11 +29,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${montserrat.variable}`}>
-      <body className="bg-gray-100 text-slate-900 font-sans antialiased">
+    <html lang="es" className={`${inter.variable} ${montserrat.variable}`}>      
+      <body className="bg-gray-100 text-slate-900 font-sans antialiased flex flex-col min-h-screen">
+        
         <Navbar />
-        {children}
+        
+        
+        <main className="flex-1 w-full flex flex-col">
+          {children}
+        </main>
+
         <WhatsAppButton />
+        <Footer />
+        
       </body>
     </html>
   );

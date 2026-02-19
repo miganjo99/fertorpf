@@ -5,14 +5,15 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
       
-      {/* --- SECCIÓN 1: HERO (Portada Impactante) --- */}
-      <main className="flex flex-col items-center justify-center min-h-[85vh] p-6 text-center bg-[url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center relative">
-        
-        {/* Capa oscura para contraste */}
+        <main 
+          className="flex flex-col items-center justify-center min-h-[85vh] p-6 text-center bg-cover bg-center relative"
+          style={{ 
+            backgroundImage: "url('/img/hero.png')" 
+          }}
+        >        
         <div className="absolute inset-0 bg-[#111827]/70"></div>
 
         <div className="relative z-10 max-w-4xl flex flex-col items-center">
-          {/* Badge pequeño */}
           <span className="bg-brand text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6 animate-fade-in-up">
             Rendimiento Profesional
           </span>

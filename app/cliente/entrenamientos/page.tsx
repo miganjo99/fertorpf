@@ -28,6 +28,12 @@ export default function ClienteDashboard() {
     ? new Date().getFullYear() - new Date(stats.fecha_nacimiento).getFullYear() 
     : '-';
 
+  const formatearFecha = (fechaString: string) => {
+    if (!fechaString) return '-';
+    const opciones: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+    return new Date(fechaString).toLocaleDateString('es-ES', opciones);
+  };
+
   return (
     <div className="space-y-8 font-sans">
       
@@ -111,6 +117,7 @@ export default function ClienteDashboard() {
             <thead className="bg-gray-50 text-xs uppercase text-gray-400 font-bold font-heading">
               <tr>
                 <th className="px-6 py-4">Jor</th>
+                <th className="px-6 py-4">Fecha</th> 
                 <th className="px-6 py-4">Rival</th>
                 <th className="px-6 py-4 text-center">Resultado</th>
                 <th className="px-6 py-4 text-center">Minutos</th>
@@ -121,41 +128,49 @@ export default function ClienteDashboard() {
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
               {partidos.length === 0 ? (
-                <tr><td colSpan={7} className="p-10 text-center text-gray-400 italic">No hay partidos registrados aún.</td></tr>
+                <tr><td colSpan={8} className="p-10 text-center text-gray-400 italic">No hay partidos registrados aún.</td></tr>
               ) : (
-                partidos.map((p) => (
-                  <tr key={p.id} className="hover:bg-red-50/30 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-gray-400 group-hover:text-[#FF4C4C] transition-colors">J{p.jornada}</td>
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {p.es_local ? (
-                        <span className="flex items-center gap-2"><span className="text-xs opacity-50">🏠</span> {p.contrincante}</span>
-                      ) : (
-                        <span className="flex items-center gap-2"><span className="text-xs opacity-50">✈️</span> {p.contrincante}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-md font-bold text-xs font-heading ${
-                        p.goles_equipo_favor > p.goles_equipo_contra ? 'bg-green-100 text-green-700' :
-                        p.goles_equipo_favor < p.goles_equipo_contra ? 'bg-red-100 text-red-700' : 
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {p.goles_equipo_favor} - {p.goles_equipo_contra}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-mono text-gray-600">{p.min_jugados}'</td>
-                    <td className="px-6 py-4 text-center">
-                      {p.goles > 0 ? <span className="font-bold text-[#FF4C4C] bg-red-50 px-2 py-1 rounded">⚽ {p.goles}</span> : <span className="text-gray-300">-</span>}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {p.asistencias > 0 ? <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">👟 {p.asistencias}</span> : <span className="text-gray-300">-</span>}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {p.tarjeta_roja && <span className="inline-block w-3 h-4 bg-red-600 rounded-sm mr-1 shadow-sm"></span>}
-                      {p.tarjeta_amarilla && <span className="inline-block w-3 h-4 bg-yellow-400 rounded-sm shadow-sm"></span>}
-                      {!p.tarjeta_roja && !p.tarjeta_amarilla && <span className="text-gray-300">-</span>}
-                    </td>
-                  </tr>
-                ))
+                partidos.map((p) => {
+                  const golesIzquierda = p.es_local ? p.goles_equipo_favor : p.goles_equipo_contra;
+                  const golesDerecha = p.es_local ? p.goles_equipo_contra : p.goles_equipo_favor;
+                  
+                  let bgColorClass = 'bg-gray-100 text-gray-600';
+                  if (golesIzquierda > golesDerecha) bgColorClass = 'bg-green-100 text-green-700'; // Gana
+                  else if (golesIzquierda < golesDerecha) bgColorClass = 'bg-red-100 text-red-700'; // Perde
+
+                  return (
+                    <tr key={p.id} className="hover:bg-red-50/30 transition-colors group">
+                      <td className="px-6 py-4 font-bold text-gray-400 group-hover:text-[#FF4C4C] transition-colors">J{p.jornada}</td>
+                      
+                      <td className="px-6 py-4 font-medium text-gray-500">{formatearFecha(p.fecha)}</td>
+                      
+                      <td className="px-6 py-4 font-bold text-gray-900">
+                        {p.es_local ? (
+                          <span className="flex items-center gap-2"><span className="text-xs opacity-50">🏠</span> {p.contrincante}</span>
+                        ) : (
+                          <span className="flex items-center gap-2"><span className="text-xs opacity-50">✈️</span> {p.contrincante}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-3 py-1 rounded-md font-bold text-xs font-heading ${bgColorClass}`}>
+                          {golesIzquierda} - {golesDerecha}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-mono text-gray-600">{p.min_jugados}'</td>
+                      <td className="px-6 py-4 text-center">
+                        {p.goles > 0 ? <span className="font-bold text-[#FF4C4C] bg-red-50 px-2 py-1 rounded">⚽ {p.goles}</span> : <span className="text-gray-300">-</span>}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {p.asistencias > 0 ? <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">👟 {p.asistencias}</span> : <span className="text-gray-300">-</span>}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {p.tarjeta_roja && <span className="inline-block w-3 h-4 bg-red-600 rounded-sm mr-1 shadow-sm"></span>}
+                        {p.tarjeta_amarilla && <span className="inline-block w-3 h-4 bg-yellow-400 rounded-sm shadow-sm"></span>}
+                        {!p.tarjeta_roja && !p.tarjeta_amarilla && <span className="text-gray-300">-</span>}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
