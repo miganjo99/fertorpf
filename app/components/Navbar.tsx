@@ -14,6 +14,7 @@ export default function Navbar() {
         setUsuario(JSON.parse(datosGuardados));
       } else {
         setUsuario(null);
+        handleLogout();
       }
     };
     checkUser();

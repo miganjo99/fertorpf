@@ -42,7 +42,14 @@ export default function ClientLayout({
             className="flex items-center gap-3 p-4 rounded-xl text-gray-500 hover:bg-gray-800 hover:text-gray-300 transition-colors cursor-not-allowed border border-transparent hover:border-gray-700"
           >
             <span className="text-xl grayscale opacity-50">🎥</span>
-            <span>Video Análisis (Pronto)</span>
+            <span>Video Psicologia (Pronto)</span>
+          </Link>
+          <Link 
+            href="#" 
+            className="flex items-center gap-3 p-4 rounded-xl text-gray-500 hover:bg-gray-800 hover:text-gray-300 transition-colors cursor-not-allowed border border-transparent hover:border-gray-700"
+          >
+            <span className="text-xl grayscale opacity-50">🏃</span>
+            <span>Tus entrenamientos (Pronto)</span>
           </Link>
         </nav>
 

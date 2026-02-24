@@ -1,9 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { 
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid 
+} from 'recharts';
 
 export default function ClienteDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [partidos, setPartidos] = useState<any[]>([]);
+  const [atributos, setAtributos] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,10 +17,12 @@ export default function ClienteDashboard() {
 
     Promise.all([
       fetch('/api/cliente/stats', { method: 'POST', body: JSON.stringify({ email }) }).then(r => r.json()),
-      fetch('/api/cliente/partidos', { method: 'POST', body: JSON.stringify({ email }) }).then(r => r.json())
-    ]).then(([dataStats, dataPartidos]) => {
+      fetch('/api/cliente/partidos', { method: 'POST', body: JSON.stringify({ email }) }).then(r => r.json()),
+      fetch('/api/cliente/atributos', { method: 'POST', body: JSON.stringify({ email }) }).then(r => r.json())
+    ]).then(([dataStats, dataPartidos, dataAtributos]) => {
       setStats(dataStats);
       setPartidos(dataPartidos);
+      setAtributos(dataAtributos); 
       setLoading(false);
     });
   }, []);
@@ -33,6 +40,21 @@ export default function ClienteDashboard() {
     const opciones: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
     return new Date(fechaString).toLocaleDateString('es-ES', opciones);
   };
+
+  const dataRadar = atributos ? [
+    { subject: 'Velocidad', A: atributos.velocidad, fullMark: 100 },
+    { subject: 'Fuerza', A: atributos.fuerza, fullMark: 100 },
+    { subject: 'Resistencia', A: atributos.resistencia, fullMark: 100 },
+    { subject: 'Técnica', A: atributos.tecnica, fullMark: 100 },
+    { subject: 'Táctica', A: atributos.tactica, fullMark: 100 },
+    { subject: 'Mentalidad', A: atributos.mentalidad, fullMark: 100 },
+  ] : [];
+
+  const ultimos5Partidos = partidos.slice(0, 5).reverse().map(p => ({
+    name: `J${p.jornada}`,
+    Minutos: p.min_jugados,
+    Goles: p.goles
+  }));
 
   return (
     <div className="space-y-8 font-sans">
@@ -103,6 +125,44 @@ export default function ClienteDashboard() {
         <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-brand hover:shadow-md transition-shadow">
           <p className="text-xs text-gray-400 font-bold uppercase font-heading">Minutos</p>
           <p className="text-3xl font-black text-gray-900 font-heading mt-1">{stats.minutos_jugados}'</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col items-center">
+          <h3 className="text-lg font-black italic font-heading text-[#111827] w-full text-center uppercase tracking-wide mb-4">Perfil de Rendimiento</h3>
+          <div className="w-full h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dataRadar}>
+                <PolarGrid stroke="#e5e7eb" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#4b5563', fontSize: 12, fontWeight: 'bold' }} />
+                <Radar name="Jugador" dataKey="A" stroke="#FF4C4C" strokeWidth={3} fill="#583232" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-lg font-black italic font-heading text-[#111827] uppercase tracking-wide mb-4 text-center">Carga Competitiva (Últimos 5 P.)</h3>
+          <div className="w-full h-72">
+            {ultimos5Partidos.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={ultimos5Partidos} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip 
+                    cursor={{ fill: '#f9fafb' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="Minutos" fill="#FF4C4C" radius={[4, 4, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 italic">No hay partidos suficientes</div>
+            )}
+          </div>
         </div>
       </div>
 
