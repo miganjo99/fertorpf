@@ -10,6 +10,7 @@ export default function ClienteDashboard() {
   const [partidos, setPartidos] = useState<any[]>([]);
   const [atributos, setAtributos] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [partidoSeleccionado, setPartidoSeleccionado] = useState<any>(null);
 
   useEffect(() => {
     const usuarioGuardado = localStorage.getItem('usuario_activo');
@@ -37,7 +38,7 @@ export default function ClienteDashboard() {
 
   const formatearFecha = (fechaString: string) => {
     if (!fechaString) return '-';
-    const opciones: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+    const opciones: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
     return new Date(fechaString).toLocaleDateString('es-ES', opciones);
   };
 
@@ -57,7 +58,7 @@ export default function ClienteDashboard() {
   }));
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans relative">
       
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 flex flex-col md:flex-row">
         
@@ -129,7 +130,6 @@ export default function ClienteDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col items-center">
           <h3 className="text-lg font-black italic font-heading text-[#111827] w-full text-center uppercase tracking-wide mb-4">Perfil de Rendimiento</h3>
           <div className="w-full h-72">
@@ -195,15 +195,18 @@ export default function ClienteDashboard() {
                   const golesDerecha = p.es_local ? p.goles_equipo_contra : p.goles_equipo_favor;
                   
                   let bgColorClass = 'bg-gray-100 text-gray-600';
-                  if (golesIzquierda > golesDerecha) bgColorClass = 'bg-green-100 text-green-700'; // Gana
-                  else if (golesIzquierda < golesDerecha) bgColorClass = 'bg-red-100 text-red-700'; // Perde
+                  if (golesIzquierda > golesDerecha) bgColorClass = 'bg-green-100 text-green-700'; 
+                  else if (golesIzquierda < golesDerecha) bgColorClass = 'bg-red-100 text-red-700'; 
 
                   return (
-                    <tr key={p.id} className="hover:bg-red-50/30 transition-colors group">
+                    
+                    <tr 
+                      key={p.id} 
+                      onClick={() => setPartidoSeleccionado(p)}
+                      className="hover:bg-red-50/30 transition-colors group cursor-pointer"
+                    >
                       <td className="px-6 py-4 font-bold text-gray-400 group-hover:text-[#FF4C4C] transition-colors">J{p.jornada}</td>
-                      
                       <td className="px-6 py-4 font-medium text-gray-500">{formatearFecha(p.fecha)}</td>
-                      
                       <td className="px-6 py-4 font-bold text-gray-900">
                         {p.es_local ? (
                           <span className="flex items-center gap-2"><span className="text-xs opacity-50">🏠</span> {p.contrincante}</span>
@@ -236,6 +239,100 @@ export default function ClienteDashboard() {
           </table>
         </div>
       </div>
+
+      {partidoSeleccionado && (
+        <div 
+          className="fixed inset-0 bg-[#111827]/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
+          onClick={() => setPartidoSeleccionado(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in-up"
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <div className={`p-6 text-center text-white relative ${
+              (partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_favor : partidoSeleccionado.goles_equipo_contra) > 
+              (partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_contra : partidoSeleccionado.goles_equipo_favor) 
+                ? 'bg-green-600' 
+                : (partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_favor : partidoSeleccionado.goles_equipo_contra) < 
+                  (partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_contra : partidoSeleccionado.goles_equipo_favor)
+                  ? 'bg-red-600'
+                  : 'bg-gray-800'
+            }`}>
+              <button 
+                onClick={() => setPartidoSeleccionado(null)}
+                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+              <p className="text-sm font-bold opacity-80 uppercase tracking-widest mb-1">
+                Jornada {partidoSeleccionado.jornada}
+              </p>
+              <p className="text-xs opacity-70 mb-4">{formatearFecha(partidoSeleccionado.fecha)}</p>
+              
+              <div className="flex justify-between items-center px-4 font-heading font-black">
+                <div className="w-1/3 text-right">
+                  <span className="block text-xl md:text-2xl truncate">{stats.equipo}</span>
+                  <span className="text-xs opacity-70 font-sans font-normal uppercase">{partidoSeleccionado.es_local ? 'Local' : 'Visitante'}</span>
+                </div>
+                <div className="w-1/3 text-4xl md:text-5xl tracking-tighter mx-2">
+                  {partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_favor : partidoSeleccionado.goles_equipo_contra} - {partidoSeleccionado.es_local ? partidoSeleccionado.goles_equipo_contra : partidoSeleccionado.goles_equipo_favor}
+                </div>
+                <div className="w-1/3 text-left">
+                  <span className="block text-xl md:text-2xl truncate">{partidoSeleccionado.contrincante}</span>
+                  <span className="text-xs opacity-70 font-sans font-normal uppercase">{partidoSeleccionado.es_local ? 'Visitante' : 'Local'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <h4 className="text-[#111827] font-black italic font-heading uppercase tracking-wide border-b pb-2 mb-4 text-center">Tu Rendimiento</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-xl text-center">
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Minutos</p>
+                  <p className="text-2xl font-black text-[#111827]">{partidoSeleccionado.min_jugados}'</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl text-center">
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Titular</p>
+                  <p className={`text-xl font-black mt-1 ${partidoSeleccionado.titular ? 'text-green-600' : 'text-gray-400'}`}>
+                    {partidoSeleccionado.titular ? 'SÍ ✅' : 'NO ❌'}
+                  </p>
+                </div>
+                <div className="bg-red-50 p-4 rounded-xl text-center border border-red-100">
+                  <p className="text-xs text-red-500 font-bold uppercase tracking-wider mb-1">Goles</p>
+                  <p className="text-2xl font-black text-[#FF4C4C]">{partidoSeleccionado.goles}</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-100">
+                  <p className="text-xs text-blue-500 font-bold uppercase tracking-wider mb-1">Asistencias</p>
+                  <p className="text-2xl font-black text-blue-600">{partidoSeleccionado.asistencias}</p>
+                </div>
+              </div>
+
+              {(partidoSeleccionado.tarjeta_amarilla || partidoSeleccionado.tarjeta_roja) && (
+                <div className="mt-4 flex justify-center gap-4 bg-gray-50 py-3 rounded-xl border border-gray-100">
+                  {partidoSeleccionado.tarjeta_amarilla && (
+                    <span className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                      <span className="w-4 h-5 bg-yellow-400 rounded-sm shadow-sm inline-block"></span> Amarilla
+                    </span>
+                  )}
+                  {partidoSeleccionado.tarjeta_roja && (
+                    <span className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                      <span className="w-4 h-5 bg-red-600 rounded-sm shadow-sm inline-block"></span> Roja
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <button 
+                onClick={() => setPartidoSeleccionado(null)}
+                className="mt-6 w-full bg-[#111827] text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors uppercase text-sm tracking-widest"
+              >
+                Cerrar Detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
