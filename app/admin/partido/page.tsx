@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function FormularioPartido() {
@@ -9,8 +9,10 @@ function FormularioPartido() {
   const nombreJugador = searchParams.get('nombre');
 
   const [loading, setLoading] = useState(false);
+  const [partidos, setPartidos] = useState<any[]>([]);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
   
-  const [form, setForm] = useState({
+  const estadoInicial = {
     user_id: userId,
     jornada: '',
     contrincante: '',
@@ -25,53 +27,111 @@ function FormularioPartido() {
     asistencias: 0,
     tarjeta_amarilla: false,
     tarjeta_roja: false,
-  });
+  };
+
+  const [form, setForm] = useState(estadoInicial);
+
+  const cargarPartidos = async () => {
+    if (!userId) return;
+    const res = await fetch(`/api/admin/partidos?userId=${userId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setPartidos(data);
+    }
+  };
+
+  useEffect(() => {
+    cargarPartidos();
+  }, [userId]);
+
+  const handleEdit = (partido: any) => {
+    setEditandoId(partido.id);
+    setForm({
+      ...partido,
+      fecha: partido.fecha ? new Date(partido.fecha).toISOString().split('T')[0] : '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Seguro que quieres eliminar este partido?.")) return;
+    
+    setLoading(true);
+    const res = await fetch(`/api/admin/partidos?id=${id}&userId=${userId}`, { method: 'DELETE' });
+    
+    if (res.ok) {
+      alert('Partido eliminado correctaemente.');
+      cargarPartidos();
+      if (editandoId === id) cancelarEdicion();
+    } else {
+      alert('Error al eliminar el partido.');
+    }
+    setLoading(false);
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoId(null);
+    setForm(estadoInicial);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch('/api/admin/nuevo-partido', {
-      method: 'POST',
+    const url = editandoId ? '/api/admin/partidos' : '/api/admin/nuevo-partido';
+    const method = editandoId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, id: editandoId }),
     });
 
     if (res.ok) {
-      alert('Partido guardado y estadísticas actualizadas correctamente.');
-      router.push('/admin/dashboard');
+      alert(`Partido ${editandoId ? 'actualizado' : 'guardado'} ,correctamente.`);
+      cancelarEdicion();
+      cargarPartidos(); 
     } else {
       alert('Error al guardar.');
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const inputClass = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF4C4C] focus:border-[#FF4C4C] outline-none transition-all";
   const labelClass = "block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide";
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4 font-sans">
+    <div className="max-w-4xl mx-auto py-10 px-4 font-sans space-y-8">
+      
       <div className="bg-white p-8 rounded-xl shadow-2xl border-t-4 border-[#FF4C4C]">
-        <h2 className="text-2xl font-black italic font-heading text-[#111827] mb-2">Nuevo Partido</h2>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-2xl font-black italic font-heading text-[#111827]">
+            {editandoId ? 'Editar Partido' : 'Nuevo Partido'}
+          </h2>
+          {editandoId && (
+            <button onClick={cancelarEdicion} className="text-sm font-bold text-gray-500 hover:text-red-500 transition-colors">
+              ✕ Cancelar Edición
+            </button>
+          )}
+        </div>
         <p className="text-gray-500 mb-8">Registrando datos para: <span className="font-bold text-[#FF4C4C]">{nombreJugador}</span></p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className={labelClass}>Jornada</label>
               <input type="number" required className={inputClass} placeholder="Ej: 5"
-                onChange={e => setForm({...form, jornada: e.target.value})} />
+                value={form.jornada} onChange={e => setForm({...form, jornada: e.target.value})} />
             </div>
             <div>
               <label className={labelClass}>Rival</label>
               <input type="text" required className={inputClass} placeholder="Ej: Valencia Mestalla"
-                onChange={e => setForm({...form, contrincante: e.target.value})} />
+                value={form.contrincante} onChange={e => setForm({...form, contrincante: e.target.value})} />
             </div>
             <div>
               <label className={labelClass}>Fecha</label>
               <input type="date" required className={inputClass}
-                onChange={e => setForm({...form, fecha: e.target.value})} />
+                value={form.fecha} onChange={e => setForm({...form, fecha: e.target.value})} />
             </div>
           </div>
 
@@ -91,45 +151,30 @@ function FormularioPartido() {
               <label className={`text-xs font-bold text-center block mb-1 ${form.es_local ? 'text-[#FF4C4C]' : 'text-gray-500'}`}>
                 {form.es_local ? 'Goles Favor (Local)' : 'Goles Contra (Local)'}
               </label>
-              <input 
-                type="number" 
-                className={inputClass} 
-                min="0" 
+              <input type="number" className={inputClass} min="0" 
                 value={form.es_local ? form.goles_equipo_favor : form.goles_equipo_contra}
                 onChange={e => {
                   const valor = parseInt(e.target.value) || 0;
-                  setForm(prev => ({
-                    ...prev, 
-                    ...(form.es_local ? { goles_equipo_favor: valor } : { goles_equipo_contra: valor })
-                  }));
+                  setForm(prev => ({ ...prev, ...(form.es_local ? { goles_equipo_favor: valor } : { goles_equipo_contra: valor }) }));
                 }} 
               />
             </div>
-            
             <div className="flex items-center justify-center pb-3 font-bold text-xl">-</div>
-            
             <div>
               <label className={`text-xs font-bold text-center block mb-1 ${!form.es_local ? 'text-[#FF4C4C]' : 'text-gray-500'}`}>
                 {form.es_local ? 'Goles Contra (Visit)' : 'Goles Favor (Visit)'}
               </label>
-              <input 
-                type="number" 
-                className={inputClass} 
-                min="0"
+              <input type="number" className={inputClass} min="0"
                 value={form.es_local ? form.goles_equipo_contra : form.goles_equipo_favor}
                 onChange={e => {
                   const valor = parseInt(e.target.value) || 0;
-                  setForm(prev => ({
-                    ...prev,
-                    ...(form.es_local ? { goles_equipo_contra: valor } : { goles_equipo_favor: valor })
-                  }));
+                  setForm(prev => ({ ...prev, ...(form.es_local ? { goles_equipo_contra: valor } : { goles_equipo_favor: valor }) }));
                 }} 
               />
             </div>
           </div>
 
           <h3 className="font-heading font-bold text-lg pt-4 border-t">Rendimiento Individual</h3>
-          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className={labelClass}>Minutos</label>
@@ -168,20 +213,70 @@ function FormularioPartido() {
           <button 
             type="submit" 
             disabled={loading}
-            className={`w-full bg-[#FF4C4C] hover:bg-[#E03E3E] text-white font-bold font-heading uppercase tracking-widest p-4 rounded-xl shadow-lg transition-all ${loading ? 'opacity-50' : ''}`}
+            className={`w-full ${editandoId ? 'bg-[#111827] hover:bg-gray-800' : 'bg-[#FF4C4C] hover:bg-[#E03E3E]'} text-white font-bold font-heading uppercase tracking-widest p-4 rounded-xl shadow-lg transition-all ${loading ? 'opacity-50' : ''}`}
           >
-            {loading ? 'Guardando y Actualizando Stats...' : 'Subir Partido'}
+            {loading ? 'Procesando...' : (editandoId ? 'Actualizar Partido' : 'Subir Partido Nuevo')}
           </button>
-
         </form>
       </div>
+
+      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <h3 className="text-xl font-black italic font-heading text-[#111827] mb-6 uppercase">Historial de {nombreJugador}</h3>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-bold font-heading">
+              <tr>
+                <th className="px-4 py-3">Jor</th>
+                <th className="px-4 py-3">Rival</th>
+                <th className="px-4 py-3 text-center">Res</th>
+                <th className="px-4 py-3 text-center">Min</th>
+                <th className="px-4 py-3 text-center">Gol</th>
+                <th className="px-4 py-3 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {partidos.length === 0 ? (
+                <tr><td colSpan={6} className="p-6 text-center text-gray-400 italic">No hay partidos registrados.</td></tr>
+              ) : (
+                partidos.map((p) => (
+                  <tr key={p.id} className={editandoId === p.id ? 'bg-red-50' : 'hover:bg-gray-50'}>
+                    <td className="px-4 py-3 font-bold">J{p.jornada}</td>
+                    <td className="px-4 py-3">{p.contrincante}</td>
+                    <td className="px-4 py-3 text-center font-bold">
+                      {p.es_local ? `${p.goles_equipo_favor}-${p.goles_equipo_contra}` : `${p.goles_equipo_contra}-${p.goles_equipo_favor}`}
+                    </td>
+                    <td className="px-4 py-3 text-center">{p.min_jugados}'</td>
+                    <td className="px-4 py-3 text-center text-[#FF4C4C] font-bold">{p.goles > 0 ? `⚽ ${p.goles}` : '-'}</td>
+                    <td className="px-4 py-3 flex justify-center gap-2">
+                      <button 
+                        onClick={() => handleEdit(p)}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-xs font-bold transition-colors"
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(p.id)}
+                        className="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1 rounded text-xs font-bold transition-colors"
+                      >
+                        Borrar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div>Cargando formulario...</div>}>
+    <Suspense fallback={<div className="p-10 text-center">Cargando...</div>}>
       <FormularioPartido />
     </Suspense>
   );
